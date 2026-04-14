@@ -122,7 +122,12 @@ def ingest_cdrs(conn, client, start, end, target_date, batch_id):
 
 def ingest_queue_stats(conn, client, queue_id, label, start, end, target_date):
     logger.info(f'Fetching queue stats for {label} (queue {queue_id})')
-    stats = client.fetch_queue_stats(queue_id, start, end)
+    try:
+        stats = client.fetch_queue_stats(queue_id, start, end)
+    except Exception as e:
+        logger.warning(f'  Queue stats fetch failed for {label} ({queue_id}): {e}')
+        return
+
     logger.info(f'  Stats: offered={stats.get("calls_offered")}, '
                 f'handled={stats.get("calls_handled")}, '
                 f'abandoned={stats.get("abandoned_calls")}')
@@ -151,7 +156,12 @@ def ingest_queue_stats(conn, client, queue_id, label, start, end, target_date):
 
 def ingest_queue_splits(conn, client, queue_id, label, start, end, target_date):
     logger.info(f'Fetching queue splits for {label} (queue {queue_id})')
-    splits = client.fetch_queue_splits(queue_id, start, end, 'day')
+    try:
+        splits = client.fetch_queue_splits(queue_id, start, end, 'day')
+    except Exception as e:
+        logger.warning(f'  Queue splits fetch failed for {label} ({queue_id}): {e}')
+        return
+    splits = splits if splits else []
     logger.info(f'  Received {len(splits)} split intervals')
 
     for s in splits:
