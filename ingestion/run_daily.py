@@ -3,6 +3,9 @@ Daily ingestion pipeline: pulls CDRs and queue data from Versature API
 into MotherDuck csh_analytics tables.
 
 Usage:
+    VERSATURE_CLIENT_ID=... VERSATURE_CLIENT_SECRET=... MOTHERDUCK_TOKEN=... python run_daily.py [YYYY-MM-DD]
+
+Or with a direct bearer token:
     VERSATURE_TOKEN=... MOTHERDUCK_TOKEN=... python run_daily.py [YYYY-MM-DD]
 """
 import duckdb
@@ -14,6 +17,8 @@ from versature_client import VersatureClient
 from config import (
     TARGET_DNIS, ENGLISH_QUEUE_ID, FRENCH_QUEUE_ID,
     AI_OVERFLOW_EN_QUEUE_ID, AI_OVERFLOW_FR_QUEUE_ID,
+    VERSATURE_CLIENT_ID, VERSATURE_CLIENT_SECRET,
+    API_BASE, API_VERSION,
 )
 
 logging.basicConfig(level=logging.INFO, format='%(asctime)s %(levelname)s %(message)s')
@@ -28,10 +33,20 @@ def run(target_date: date = None):
     end = str(target_date)
     batch_id = f'daily-{target_date}'
 
-    token = os.environ['VERSATURE_TOKEN']
     md_token = os.environ['MOTHERDUCK_TOKEN']
 
-    client = VersatureClient(token)
+    # Auth: prefer client credentials, fall back to direct token
+    token = os.environ.get('VERSATURE_TOKEN')
+    if token:
+        client = VersatureClient(access_token=token, base_url=API_BASE, api_version=API_VERSION)
+    else:
+        client = VersatureClient(
+            client_id=VERSATURE_CLIENT_ID,
+            client_secret=VERSATURE_CLIENT_SECRET,
+            base_url=API_BASE,
+            api_version=API_VERSION,
+        )
+
     conn = duckdb.connect(f'md:csh_analytics?motherduck_token={md_token}')
 
     logger.info(f'=== Ingestion for {target_date} ===')

@@ -16,5 +16,8 @@ jobs:
       - run: pip install duckdb httpx pyarrow
       - run: python ingestion/run_daily.py
         env:
-          VERSATURE_TOKEN: ${{ secrets.VERSATURE_TOKEN }}
+          VERSATURE_BASE_URL: ${{ secrets.VERSATURE_BASE_URL }}
+          VERSATURE_CLIENT_ID: ${{ secrets.VERSATURE_CLIENT_ID }}
+          VERSATURE_CLIENT_SECRET: ${{ secrets.VERSATURE_CLIENT_SECRET }}
+          VERSATURE_API_VERSION: ${{ secrets.VERSATURE_API_VERSION }}
           MOTHERDUCK_TOKEN: ${{ secrets.MOTHERDUCK_TOKEN }}

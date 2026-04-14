@@ -1,8 +1,12 @@
 import os
 
 TARGET_DNIS = ['16135949199', '6135949199']
-API_BASE = 'https://integrate.versature.com/api/'
-ACCEPT_HEADER = 'application/vnd.integrate.v1.6.0+json'
+API_BASE = os.environ.get('VERSATURE_BASE_URL', 'https://integrate.versature.com/api/')
+API_VERSION = os.environ.get('VERSATURE_API_VERSION', 'application/vnd.integrate.v1.6.0+json')
+
+# Versature OAuth2 client credentials
+VERSATURE_CLIENT_ID = os.environ.get('VERSATURE_CLIENT_ID')
+VERSATURE_CLIENT_SECRET = os.environ.get('VERSATURE_CLIENT_SECRET')
 
 # Queue IDs discovered from Versature API (via bootstrap_queues.py)
 ENGLISH_QUEUE_ID = os.environ.get('QUEUE_ENGLISH', '8020')

@@ -6,12 +6,40 @@ logger = logging.getLogger(__name__)
 
 
 class VersatureClient:
-    def __init__(self, access_token: str):
-        self.base = 'https://integrate.versature.com/api/'
+    def __init__(self, *, access_token: str = None,
+                 client_id: str = None, client_secret: str = None,
+                 base_url: str = 'https://integrate.versature.com/api/',
+                 api_version: str = 'application/vnd.integrate.v1.6.0+json'):
+        self.base = base_url.rstrip('/') + '/'
+        self.api_version = api_version
+        self._token = access_token
+        self._client_id = client_id
+        self._client_secret = client_secret
+        if not self._token and (self._client_id and self._client_secret):
+            self._token = self._fetch_token()
+        if not self._token:
+            raise ValueError('Either access_token or client_id+client_secret required')
         self.headers = {
-            'Authorization': f'Bearer {access_token}',
-            'Accept': 'application/vnd.integrate.v1.6.0+json'
+            'Authorization': f'Bearer {self._token}',
+            'Accept': self.api_version,
         }
+
+    def _fetch_token(self) -> str:
+        logger.info('Fetching OAuth2 token via client_credentials')
+        response = httpx.post(
+            f'{self.base}oauth/token',
+            data={
+                'grant_type': 'client_credentials',
+                'client_id': self._client_id,
+                'client_secret': self._client_secret,
+            },
+            headers={'Content-Type': 'application/x-www-form-urlencoded'},
+            timeout=30,
+        )
+        response.raise_for_status()
+        data = response.json()
+        logger.info('  Token obtained successfully')
+        return data['access_token']
 
     def _get(self, path: str, params: dict = None) -> dict:
         url = f'{self.base}{path}'
