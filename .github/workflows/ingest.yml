@@ -1,0 +1,20 @@
+name: CSH Daily Ingestion
+on:
+  schedule:
+    - cron: '0 12 * * *'       # 08:00 Eastern (UTC-4)
+    - cron: '0 0 * * 1'        # Weekly rollup: Monday midnight UTC
+  workflow_dispatch: {}         # Manual trigger
+
+jobs:
+  ingest:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - run: pip install duckdb httpx pyarrow
+      - run: python ingestion/run_daily.py
+        env:
+          VERSATURE_TOKEN: ${{ secrets.VERSATURE_TOKEN }}
+          MOTHERDUCK_TOKEN: ${{ secrets.MOTHERDUCK_TOKEN }}
