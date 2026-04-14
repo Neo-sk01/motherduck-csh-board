@@ -13,7 +13,7 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: '3.11'
-      - run: pip install duckdb httpx pyarrow
+      - run: pip install 'duckdb==1.5.1' httpx pyarrow
       - run: python ingestion/run_daily.py
         env:
           VERSATURE_BASE_URL: ${{ secrets.VERSATURE_BASE_URL }}
