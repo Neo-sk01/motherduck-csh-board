@@ -27,7 +27,7 @@ class VersatureClient:
     def _fetch_token(self) -> str:
         logger.info('Fetching OAuth2 token via client_credentials')
         response = httpx.post(
-            f'{self.base}oauth/token',
+            f'{self.base}oauth/token/',
             data={
                 'grant_type': 'client_credentials',
                 'client_id': self._client_id,
