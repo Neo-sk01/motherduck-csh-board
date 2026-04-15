@@ -41,24 +41,29 @@ class VersatureClient:
         logger.info('  Token obtained successfully')
         return data['access_token']
 
-    def _get(self, path: str, params: dict = None) -> dict:
+    def _get(self, path: str, params: dict = None):
         url = f'{self.base}{path}'
         logger.info(f'GET {url} params={params}')
         response = httpx.get(url, headers=self.headers, params=params, timeout=30)
         response.raise_for_status()
         data = response.json()
-        logger.info(f'  -> status={response.status_code} keys={list(data.keys()) if isinstance(data, dict) else "list"}')
+        if isinstance(data, dict):
+            logger.info(f'  -> status={response.status_code} keys={list(data.keys())}')
+        else:
+            logger.info(f'  -> status={response.status_code} type={type(data).__name__} len={len(data)}')
         return data
 
     def fetch_cdrs(self, start_date: str, end_date: str) -> list:
-        """Fetch all CDRs for date range, handling cursor pagination."""
+        """Fetch all CDRs for date range, handling cursor pagination.
+        Versature returns {result: [...], cursor: ..., more: bool}."""
         all_records = []
         params = {'start_date': start_date, 'end_date': end_date}
         page = 0
         while True:
             page += 1
             data = self._get('cdrs/users/', params)
-            records = data.get('data', data.get('results', []))
+            # Versature uses 'result' key for CDR pagination
+            records = data.get('result', data.get('data', data.get('results', [])))
             all_records.extend(records)
             logger.info(f'  CDR page {page}: {len(records)} records (total: {len(all_records)})')
             if not data.get('more', False):
@@ -68,17 +73,28 @@ class VersatureClient:
         return all_records
 
     def fetch_queue_stats(self, queue_id: str, start_date: str, end_date: str) -> dict:
+        """Fetch queue stats. Versature needs business-hours time ranges.
+        Returns either a dict or array[0]."""
         data = self._get(f'call_queues/{queue_id}/stats/', {
             'start_date': start_date, 'end_date': end_date
         })
+        # Response may be a list (one stats object per day) or a dict
+        if isinstance(data, list):
+            return data[0] if data else {}
         return data.get('data', data) if isinstance(data, dict) else data
 
     def fetch_queue_splits(self, queue_id: str, start_date: str, end_date: str, period: str = 'day') -> list:
+        """Fetch queue split reports. Versature returns a plain array."""
         data = self._get(f'call_queues/{queue_id}/reports/splits/', {
             'start_date': start_date, 'end_date': end_date, 'period': period
         })
+        # Some endpoints return a plain array, others {data: [...]}
+        if isinstance(data, list):
+            return data
         return data.get('data', data.get('results', []))
 
     def fetch_queue_list(self) -> list:
         data = self._get('call_queues/')
+        if isinstance(data, list):
+            return data
         return data.get('data', data.get('results', []))

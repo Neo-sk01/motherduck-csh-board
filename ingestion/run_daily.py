@@ -31,6 +31,9 @@ def run(target_date: date = None):
 
     start = str(target_date)
     end = str(target_date)
+    # Business-hours time range for queue stats (Eastern time, 8AM-5PM)
+    bh_start = f'{target_date}T08:00:00'
+    bh_end = f'{target_date}T16:59:59'
     batch_id = f'daily-{target_date}'
 
     md_token = os.environ['MOTHERDUCK_TOKEN']
@@ -67,12 +70,12 @@ def run(target_date: date = None):
     }
 
     for label, queue_id in queues.items():
-        ingest_queue_stats(conn, client, queue_id, label, start, end, target_date)
-        ingest_queue_splits(conn, client, queue_id, label, start, end, target_date)
+        ingest_queue_stats(conn, client, queue_id, label, bh_start, bh_end, target_date)
+        ingest_queue_splits(conn, client, queue_id, label, bh_start, bh_end, target_date)
 
     # AI overflow FR — stats and splits with 'ai' label
-    ingest_queue_stats(conn, client, AI_OVERFLOW_FR_QUEUE_ID, 'ai', start, end, target_date)
-    ingest_queue_splits(conn, client, AI_OVERFLOW_FR_QUEUE_ID, 'ai', start, end, target_date)
+    ingest_queue_stats(conn, client, AI_OVERFLOW_FR_QUEUE_ID, 'ai', bh_start, bh_end, target_date)
+    ingest_queue_splits(conn, client, AI_OVERFLOW_FR_QUEUE_ID, 'ai', bh_start, bh_end, target_date)
 
     # --- Validate ---
     validate_day(conn, target_date)
